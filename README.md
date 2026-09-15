@@ -173,6 +173,27 @@ At the operating point. Top row original, middle row counterfactual, bottom row
 the difference. Anatomy survives and the edits are localised and structured
 rather than uniform noise.
 
+### Inference on a single slice
+
+`src/infer.py` runs the whole path on one test slice: predict, generate a
+counterfactual toward the classifier's second-most-likely organ, and report
+whether the result is worth believing.
+
+![inference example](docs/figures/inference_example.png)
+
+```
+slice 7: truth lung-left, predicted lung-left at p=1.000
+  counterfactual target lung-right at start_t=200
+  now predicts lung-right (target p=0.716), flipped=True
+  L1 0.1770  pixels changed 0.580  identity 0.914
+```
+
+The edit fills the air-filled left lung field with tissue-like texture, which is
+what distinguishes the two classes in this dataset, and the classifier moves
+from 1.000 on lung-left to 0.716 on lung-right while identity correlation stays
+at 0.914. The starting depth defaults to the operating point found by the sweep,
+read from `results/counterfactual_sweep.json` rather than hard-coded.
+
 ### Memorisation
 
 ![memorisation](docs/figures/memorisation.png)

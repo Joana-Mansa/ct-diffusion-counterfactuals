@@ -1,0 +1,20 @@
+{
+  "index": 7,
+  "ground_truth": "lung-left",
+  "original_prediction": "lung-left",
+  "original_confidence": 0.9999858140945435,
+  "target_organ": "lung-right",
+  "counterfactual_prediction": "lung-right",
+  "counterfactual_confidence_in_target": 0.7162621021270752,
+  "flipped_to_target": true,
+  "start_t": 200,
+  "guidance_scale": 6.0,
+  "quality": {
+    "validity": 1.0,
+    "flip_rate_any": 1.0,
+    "l1": 0.17696985602378845,
+    "l2": 0.23449937999248505,
+    "frac_pixels_changed": 0.580322265625,
+    "identity_corr": 0.9139813184738159
+  }
+}
