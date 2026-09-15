@@ -22,6 +22,21 @@ RESULTS = ROOT / "results"
 WEIGHTS = ROOT / "weights"
 
 
+def amp_setting(dev):
+    """Pick an autocast dtype the GPU actually supports.
+
+    Ampere and later do bfloat16. Volta, which is what the V100s are, does not,
+    and asking for it there either errors or silently runs in a slow path. Those
+    cards do float16 well, which needs a gradient scaler because the range is
+    narrow enough for gradients to underflow.
+    """
+    if dev != "cuda":
+        return None, False
+    if torch.cuda.is_bf16_supported():
+        return torch.bfloat16, False
+    return torch.float16, True
+
+
 def build_unet():
     """UNet used for every experiment here. Attention at the coarsest level only."""
     return DiffusionModelUNet(
@@ -48,6 +63,9 @@ def main():
     model = build_unet().to(dev)
     sched = DDPMScheduler(num_train_timesteps=args.timesteps)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    amp_dtype, needs_scaler = amp_setting(dev)
+    scaler = torch.amp.GradScaler(dev, enabled=needs_scaler)
+    print(f"device {dev}, autocast {amp_dtype}, grad scaler {needs_scaler}", flush=True)
 
     history = []
     start = time.time()
@@ -59,11 +77,12 @@ def main():
             t = torch.randint(0, args.timesteps, (x.shape[0],), device=dev)
             noise = torch.randn_like(x)
             opt.zero_grad(set_to_none=True)
-            with torch.amp.autocast(dev, dtype=torch.bfloat16):
+            with torch.amp.autocast(dev, dtype=amp_dtype, enabled=amp_dtype is not None):
                 pred = model(sched.add_noise(x, noise, t), t)
                 loss = F.mse_loss(pred.float(), noise)
-            loss.backward()
-            opt.step()
+            scaler.scale(loss).backward()
+            scaler.step(opt)
+            scaler.update()
             running += loss.item() * x.shape[0]
             seen += x.shape[0]
         epoch_loss = running / seen
@@ -75,7 +94,8 @@ def main():
                WEIGHTS / args.out)
     (RESULTS / "diffusion_training.json").write_text(json.dumps(
         {"epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr,
-         "timesteps": args.timesteps, "minutes": (time.time() - start) / 60,
+         "timesteps": args.timesteps, "amp_dtype": str(amp_dtype),
+         "minutes": (time.time() - start) / 60,
          "history": history}, indent=2))
     print(f"saved {WEIGHTS / args.out}")
 
