@@ -2,6 +2,8 @@
 
 # Method
 
+[Architecture diagrams, training losses and learning curves](architecture.md) explain the model components visually.
+
 ## Training
 
 1. **Classifier:** OrganCNN learns the 11 organ labels with cross-entropy over 15 epochs. The checkpoint with best validation accuracy is retained.

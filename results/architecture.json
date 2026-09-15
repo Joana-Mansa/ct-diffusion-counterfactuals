@@ -1,0 +1,151 @@
+{
+  "input_shape": [
+    1,
+    1,
+    64,
+    64
+  ],
+  "classifier_parameters": 1176427,
+  "unet_parameters": 10395905,
+  "unet_stage_outputs": {
+    "conv_in": [
+      1,
+      64,
+      64,
+      64
+    ],
+    "down_blocks.0": [
+      [
+        1,
+        64,
+        32,
+        32
+      ],
+      [
+        [
+          1,
+          64,
+          64,
+          64
+        ],
+        [
+          1,
+          64,
+          64,
+          64
+        ],
+        [
+          1,
+          64,
+          32,
+          32
+        ]
+      ]
+    ],
+    "down_blocks.1": [
+      [
+        1,
+        128,
+        16,
+        16
+      ],
+      [
+        [
+          1,
+          128,
+          32,
+          32
+        ],
+        [
+          1,
+          128,
+          32,
+          32
+        ],
+        [
+          1,
+          128,
+          16,
+          16
+        ]
+      ]
+    ],
+    "down_blocks.2": [
+      [
+        1,
+        192,
+        16,
+        16
+      ],
+      [
+        [
+          1,
+          192,
+          16,
+          16
+        ],
+        [
+          1,
+          192,
+          16,
+          16
+        ]
+      ]
+    ],
+    "middle_block": [
+      1,
+      192,
+      16,
+      16
+    ],
+    "up_blocks.0": [
+      1,
+      192,
+      32,
+      32
+    ],
+    "up_blocks.1": [
+      1,
+      128,
+      64,
+      64
+    ],
+    "up_blocks.2": [
+      1,
+      64,
+      64,
+      64
+    ],
+    "out": [
+      1,
+      1,
+      64,
+      64
+    ]
+  },
+  "unet_output_shape": [
+    1,
+    1,
+    64,
+    64
+  ],
+  "down_residual_blocks": [
+    2,
+    2,
+    2
+  ],
+  "up_residual_blocks": [
+    3,
+    3,
+    3
+  ],
+  "source_sha256": {
+    "train_diffusion.py": "f69ab46827da22d6631659848283122076bbc2b2a4955cf51d70e580e55139df",
+    "evaluate.py": "a2f99c4d24536fa9c7cf52b1dcf7e7c29caf3ad90d9e2bcb05a476e5a4f812cd",
+    "train_classifier.py": "98c73378191ed51574f54dd08c0dee58bddf8c5ee356219f47f7a519d4766da7",
+    "counterfactual.py": "62323cdb297ef6d463813a2a795cb054f4c280591574c339321b3b70ce1c4077",
+    "data.py": "7be1ce80e560ebe1606b593ff1905257b48c465078b2e4b7313fd16c0518948e",
+    "figures.py": "afec7e41b9a10554057c4b4f9620f377e072191dedeb5f2961bc95c54e4d48e2",
+    "infer.py": "f40f5e1a68f1d44052b1eb75e071d1f81ac1e68b3b45021be2a9eec7acbaafca"
+  }
+}

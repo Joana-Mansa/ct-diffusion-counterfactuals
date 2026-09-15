@@ -65,7 +65,7 @@ Training writes experiment records and weights. Use a separate clone or back up 
 
 ```bash
 python src/train_classifier.py
-python src/train_diffusion.py
+python src/train_diffusion.py --epochs 40 --batch-size 512 --lr 0.00025 --timesteps 1000
 python src/counterfactual.py
 python src/evaluate.py
 ```
@@ -77,3 +77,11 @@ Read each script's `--help` before changing settings. For CT-FM, tagged training
 The checkpoint audit used Python 3.11, PyTorch 2.14.0+cu130, MONAI 1.6.0, MedMNIST 3.0.2, NumPy 2.4.6 and SciPy 1.17.1. CT-FM also used `lighter-zoo` 0.1.3 and Zennit 1.0.0. [`verified-environment.json`](../results/verified-environment.json) records the environment actually used. Dependency ranges in `requirements.txt` are installation bounds, not a claim that every supported combination was tested.
 
 Full model training was not rerun during this audit. Original stochastic analysis outputs were not all accompanied by saved RNG states. Checkpoint re-evaluation, arithmetic checks and a newly seeded repeat are different levels of evidence; see [verification](verification.md).
+
+## Regenerate architecture drawings and learning curves
+
+```bash
+python scripts/architecture_figures.py
+```
+
+This needs only NumPy and Matplotlib. It writes SVG and PNG diagrams plus learning curves under `docs/figures/`. The curves read saved JSON histories; no model training runs. Layer shapes and parameter counts are recorded in [`results/architecture.json`](../results/architecture.json).

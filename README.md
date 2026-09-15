@@ -23,6 +23,24 @@ These are **real benchmark inputs**, not generated images. Each is the first tes
 
 [Data provenance and labels](docs/data.md) · [How the method works](docs/methods.md)
 
+## How does the model work?
+
+![Architecture of the trained models, with feature sizes and output heads](docs/figures/architecture.svg)
+
+**Two networks are trained separately:** OrganCNN predicts one of 11 organs; the U-Net predicts noise added to a CT crop. During counterfactual generation, their weights stay fixed while the classifier gradient steers the denoising process.
+
+## What is optimised during training?
+
+| Component | Training objective | Checkpoint choice |
+|---|---|---|
+| OrganCNN | Cross-entropy: increase probability of the correct organ | Highest validation accuracy over 15 epochs |
+| Diffusion U-Net | Mean squared error between predicted and sampled noise | Final checkpoint after the recorded 40 epochs |
+| Guided sampling | Increase the requested organ's log-probability using image gradients | No model training; L1 and image correlation are evaluation metrics |
+
+![Recorded diffusion loss, classifier loss and validation accuracy](docs/figures/learning_curves.svg)
+
+These curves come from the saved training histories. The diffusion loss is **noise-prediction error**, not image reconstruction error or a realism score. [Layer details, loss equations and sampling diagram](docs/architecture.md).
+
 ## What do the results support?
 
 | Check | Result | Meaning |
@@ -61,6 +79,7 @@ Then follow the [reproduction guide](docs/reproduce.md) to download checked weig
 
 | Resource | What it contains |
 |---|---|
+| [Architecture and losses](docs/architecture.md) | Layer shapes, training objectives and learning curves |
 | [Methods](docs/methods.md) | Training, guided denoising and metric definitions |
 | [Full results](docs/results.md) | Original experiment, seeded repeat and sample-quality limits |
 | [Verification record](docs/verification.md) | What was rerun, what was only checked, and artifact hashes |
