@@ -171,8 +171,8 @@ classifier predicts $y'$ after editing. \textbf{Proximity} is mean $L_1$ change
 and the fraction of pixels moving more than $0.1$ on the $[-1,1]$ scale.
 \textbf{Identity} is the centred cosine similarity between $x_0$ and the
 counterfactual. \textbf{Realism} is a Frechet distance computed on features of
-the organ classifier instead of ImageNet Inception, since Inception features are
-trained on natural photographs. The value is comparable within this study only.
+the organ classifier. Inception features are trained on natural photographs and
+describe CT poorly. The value is comparable within this study only.
 
 For memorisation we compute, for each of 1{,}024 generated samples, the minimum
 $L_2$ pixel distance to any of 2{,}048 training images, and compare the
