@@ -1,0 +1,374 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Where Diffusion Counterfactuals Stop Explaining and Start Repainting:\\
+An Operating-Point Analysis on Abdominal CT}
+
+\author{\IEEEauthorblockN{Joana Owusu-Appiah}
+\IEEEauthorblockA{\textit{Erasmus Mundus MSc Medical Imaging and Applications (MAIA)} \\
+Girona, Spain \textbullet{} Dijon, France \textbullet{} Cassino, Italy \\
+owusuappiahjoana59@gmail.com}}
+
+\maketitle
+
+\begin{abstract}
+Counterfactual explanation asks what would have to change for a classifier to
+decide otherwise, and diffusion models are an increasingly common way to
+generate the answer. The method has a free parameter that is rarely studied: how
+far up the forward diffusion trajectory the original image is taken before
+guided denoising begins. We train an unconditional denoising diffusion
+probabilistic model on 34{,}561 abdominal CT slices, attach a classifier-guided
+sampling procedure, and sweep this noising depth across seven values while
+measuring validity, proximity, pixel-level sparsity and identity preservation on
+256 held-out slices. Validity does not increase monotonically with noising
+depth. It peaks at 0.426 and then declines, while identity correlation with the
+original slice collapses from 0.981 to 0.079. Past the peak the procedure
+changes 88\% of pixels and retains almost nothing of the input, so whatever it
+produces is no longer an explanation of that slice. We additionally run a
+nearest-neighbour memorisation audit against the training set and find no
+evidence of training-image reproduction, with generated samples no closer to
+training data than real held-out images are. We argue that reporting a single
+noising depth without the surrounding curve makes diffusion counterfactuals
+difficult to interpret, and that the memorisation audit should be routine for
+generative models trained on patient data. Code and all figures are public.
+\end{abstract}
+
+\begin{IEEEkeywords}
+explainable AI, counterfactual explanation, diffusion models, computed
+tomography, generative models, memorisation
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Saliency maps tell a reader where a network looked. They do not say what would
+have had to be different for the network to reach another conclusion. A
+counterfactual explanation answers the second question directly: given an image
+the model labels $y$, produce the nearest image the model labels $y'$. If the
+edit lands on structures a clinician would also identify, the explanation is
+informative; if it scatters changes across the whole field of view, it is not.
+
+Diffusion models are well suited to generating such edits because they define a
+continuous path between data and noise. The standard recipe noises a real image
+forward to some timestep $t_{\mathrm{start}}$ and denoises it back down under
+gradient guidance from the classifier being explained
+\cite{jeanneret2022diffusion,sanchez2024counterfactual}. The choice of
+$t_{\mathrm{start}}$ controls a trade-off that is intuitively obvious and, in
+practice, rarely reported: too little noise leaves the image unchanged and the
+prediction unmoved, too much destroys the evidence the explanation was supposed
+to be about.
+
+This paper treats that parameter as the object of study rather than a
+hyperparameter to be fixed. Our contributions are:
+
+\begin{enumerate}
+\item A systematic sweep of noising depth on abdominal CT, measuring validity,
+      proximity, sparsity and identity on the same 256 slices, showing that
+      validity is \emph{non-monotonic} and peaks well before the image is
+      destroyed.
+\item Identification of an operating point beyond which the procedure stops
+      being an explanation of the input, with quantitative criteria for locating
+      it.
+\item A nearest-neighbour memorisation audit with a real-data control, which we
+      argue should accompany any medical generative model, following the finding
+      that latent diffusion models can reproduce training patients
+      \cite{dar2024memorize}.
+\end{enumerate}
+
+\section{Related Work}
+
+\textbf{Counterfactual explanation.} DiME \cite{jeanneret2022diffusion}
+introduced diffusion-based counterfactual generation for natural images. In
+medical imaging, diffusion autoencoders have been used for classification and
+regression explanations \cite{sanchez2024counterfactual}, and counterfactual
+diffusion has been applied to histopathology. Salahuddin et
+al.~\cite{salahuddin2024renal} combine counterfactual explanation with
+uncertainty estimation for renal cyst segmentation on contrast-enhanced
+abdominal CT using a VAE-GAN, and validate across centres. The present work
+substitutes a diffusion model for the VAE-GAN and studies the sampling parameter
+that substitution introduces.
+
+\textbf{Interpretability evaluation.} Salahuddin et
+al.~\cite{salahuddin2022transparency} survey interpretability for medical image
+analysis and note that explanation quality is frequently asserted rather than
+measured. We follow that recommendation by reporting four quantitative axes
+rather than a gallery of examples.
+
+\textbf{Memorisation.} Dar et al.~\cite{dar2024memorize} show that unconditional
+latent diffusion models trained on medical images can reproduce training
+patients, with direct implications for sharing synthetic data. We adopt their
+framing and report a nearest-neighbour statistic against a real-data control.
+
+\section{Method}
+
+\subsection{Data}
+
+We use OrganAMNIST from MedMNIST v2 \cite{yang2023medmnist}, the $64\times64$
+release. The dataset contains axial abdominal CT slices cropped to eleven organ
+classes and derived from the Liver Tumor Segmentation Benchmark. Splits are
+34{,}561 training, 6{,}491 validation and 17{,}778 test images. Intensities are
+mapped from \texttt{uint8} to $[-1,1]$. Fig.~\ref{fig:dist} shows the class
+distribution, which is uneven: liver contributes 6{,}164 training slices and
+femur-left 1{,}390. We therefore report per-class classifier accuracy rather
+than a single average.
+
+\begin{figure}[t]
+\centerline{\includegraphics[width=\columnwidth]{../docs/figures/class_distribution.png}}
+\caption{OrganAMNIST training class distribution. The imbalance motivates
+per-class reporting in Table~\ref{tab:perclass}.}
+\label{fig:dist}
+\end{figure}
+
+\subsection{Generative model}
+
+The diffusion model is a MONAI \texttt{DiffusionModelUNet} with 10.4M
+parameters, channel widths $(64,128,192)$, two residual blocks per level and
+self-attention at the coarsest resolution only. It is trained to predict the
+noise $\epsilon$ added at timestep $t$ under a DDPM schedule with
+$T=1000$ \cite{ho2020ddpm}, minimising
+\begin{equation}
+\mathcal{L} = \mathbb{E}_{x_0,\,\epsilon,\,t}
+\left\| \epsilon - \epsilon_\theta\!\left(\sqrt{\bar\alpha_t}\,x_0 +
+\sqrt{1-\bar\alpha_t}\,\epsilon,\; t\right) \right\|_2^2 .
+\end{equation}
+Training ran for 40 epochs at batch size 512 in \texttt{bfloat16}, taking 23
+minutes on one NVIDIA A100.
+
+\subsection{Classifier under explanation}
+
+The model being explained is a four-stage convolutional network over
+$64\times64$ slices with 11 outputs. It is deliberately small: the object of
+study is the explanation procedure, and a larger classifier would slow the
+counterfactual search without changing what is measured.
+
+\subsection{Counterfactual generation}
+
+Given a slice $x_0$ with source label $y$ and a target label $y'\neq y$, we
+noise $x_0$ forward to $t_{\mathrm{start}}$ and denoise with DDIM
+\cite{song2021ddim} over 100 steps. At each step we form the predicted clean
+image
+\begin{equation}
+\hat{x}_0^{(t)} = \frac{x_t - \sqrt{1-\bar\alpha_t}\,
+\epsilon_\theta(x_t,t)}{\sqrt{\bar\alpha_t}},
+\end{equation}
+and modify the noise prediction using the classifier gradient,
+\begin{equation}
+\tilde\epsilon = \epsilon_\theta(x_t,t) - s\sqrt{1-\bar\alpha_t}\,
+\nabla_{\hat{x}_0}\log p_\phi\!\left(y' \mid \hat{x}_0^{(t)}\right),
+\end{equation}
+with guidance scale $s=6$.
+
+Taking the gradient with respect to $\hat{x}_0^{(t)}$ rather than $x_t$ is
+deliberate. The classifier was trained on clean slices, so evaluating it on a
+partially noised latent queries it about inputs outside its training
+distribution.
+
+\subsection{Evaluation}
+
+We report four axes on 256 randomly chosen test slices, on which the classifier
+achieves 0.934 accuracy. \textbf{Validity} is the fraction for which the
+classifier predicts $y'$ after editing. \textbf{Proximity} is mean $L_1$ change
+and the fraction of pixels moving more than $0.1$ on the $[-1,1]$ scale.
+\textbf{Identity} is the centred cosine similarity between $x_0$ and the
+counterfactual. \textbf{Realism} is a Frechet distance computed on features of
+the organ classifier rather than ImageNet Inception, because Inception features
+are trained on natural photographs and describe CT poorly; the number is
+therefore internally comparable only.
+
+For memorisation we compute, for each of 1{,}024 generated samples, the minimum
+$L_2$ pixel distance to any of 2{,}048 training images, and compare the
+distribution against the same statistic computed for real held-out test images.
+
+\section{Results}
+
+\subsection{Sample quality}
+
+\begin{figure}[t]
+\centerline{\includegraphics[width=\columnwidth]{../docs/figures/samples.png}}
+\caption{Unconditional samples after 40 epochs. Organ boundaries, vessels,
+bright contrast-enhanced structures and dark air appear in plausible
+arrangements.}
+\label{fig:samples}
+\end{figure}
+
+Fig.~\ref{fig:samples} shows unconditional samples. Noise-prediction MSE fell
+from 0.096 to 0.034 over training. The Frechet distance between generated
+samples and training data is 46.8 in classifier feature space, against a floor
+of 2.9 measured between real test images and training data. Samples remain
+distinguishable from real data, which is expected at this training budget.
+
+\subsection{Classifier}
+
+The classifier reaches 95.8\% test accuracy. Per-class results
+(Table~\ref{tab:perclass}) span 0.885 for heart to 1.000 for left lung; lungs
+are near-perfect because they present air against soft tissue.
+
+\begin{table}[t]
+\caption{Classifier test accuracy per organ}
+\label{tab:perclass}
+\centering
+\begin{tabular}{lc lc}
+\toprule
+Organ & Acc. & Organ & Acc. \\
+\midrule
+heart        & 0.885 & pancreas    & 0.976 \\
+kidney-left  & 0.899 & spleen      & 0.982 \\
+femur-left   & 0.946 & liver       & 0.992 \\
+kidney-right & 0.946 & lung-right  & 0.999 \\
+bladder      & 0.952 & lung-left   & 1.000 \\
+femur-right  & 0.968 & \textbf{overall} & \textbf{0.958} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Validity is non-monotonic in noising depth}
+
+Table~\ref{tab:sweep} and Fig.~\ref{fig:tradeoff} give the main result.
+
+\begin{table}[t]
+\caption{Counterfactual quality against noising depth, 256 test slices}
+\label{tab:sweep}
+\centering
+\begin{tabular}{rcccc}
+\toprule
+$t_{\mathrm{start}}$ & Validity & $L_1$ & Pixels chg. & Identity \\
+\midrule
+50  & 0.086 & 0.054 & 0.162 & 0.981 \\
+100 & 0.301 & 0.090 & 0.344 & 0.950 \\
+150 & 0.387 & 0.114 & 0.424 & 0.923 \\
+\textbf{200} & \textbf{0.426} & 0.155 & 0.546 & 0.866 \\
+300 & 0.375 & 0.305 & 0.777 & 0.602 \\
+400 & 0.398 & 0.422 & 0.851 & 0.335 \\
+600 & 0.219 & 0.481 & 0.876 & 0.079 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centerline{\includegraphics[width=\columnwidth]{../docs/figures/validity_proximity.png}}
+\caption{Validity, proximity, and the trade-off between them. Validity peaks at
+$t_{\mathrm{start}}=200$ and declines thereafter while the $L_1$ change
+continues to grow.}
+\label{fig:tradeoff}
+\end{figure}
+
+Validity rises steeply to 0.426 at $t_{\mathrm{start}}=200$, then falls to 0.219
+at $t_{\mathrm{start}}=600$. Meanwhile $L_1$ change grows monotonically from
+0.054 to 0.481 and identity correlation decays from 0.981 to 0.079.
+
+The common assumption that deeper noising buys more successful flips is
+therefore false in this setting. Past the peak, guided denoising has enough
+freedom to leave the neighbourhood of the original slice entirely. The
+classifier is then being asked about a different image, not about a modified
+version of the input, and it is no longer obliged to move toward the target
+class. At $t_{\mathrm{start}}=600$ the procedure changes 88\% of pixels and
+retains essentially nothing of the input.
+
+We suggest a simple operating criterion: choose the largest
+$t_{\mathrm{start}}$ for which identity correlation remains above a threshold
+(here $0.85$), and verify that validity has not yet begun to fall. Both
+conditions select $t_{\mathrm{start}}=200$.
+
+\begin{figure}[t]
+\centerline{\includegraphics[width=\columnwidth]{../docs/figures/counterfactual_panel.png}}
+\caption{Counterfactuals at the operating point. Top: original. Middle:
+counterfactual. Bottom: difference. Anatomy is preserved and edits are localised
+and structured rather than uniform noise.}
+\label{fig:panel}
+\end{figure}
+
+Fig.~\ref{fig:panel} shows qualitative results at the selected operating point.
+
+\subsection{Memorisation audit}
+
+\begin{table}[t]
+\caption{Nearest-neighbour distance to the training set}
+\label{tab:mem}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Query set & Median & Minimum & Ratio \\
+\midrule
+Generated ($n{=}1024$) & 22.68 & 11.48 & 0.899 \\
+Real test ($n{=}310$)  & 25.22 & 10.71 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Generated samples sit approximately 10\% closer to the training set than real
+unseen images (Table~\ref{tab:mem}), and the closest generated sample is
+\emph{further} from training data than the closest real test image. There is no
+evidence of training-image reproduction at this scale. We stress that this audit
+costs minutes and should accompany any medical generative model whose outputs
+may be shared.
+
+\section{Limitations}
+
+Results are on $64\times64$ single slices rather than full CT volumes, a
+deliberate trade to keep the pipeline within a single-GPU day. The method
+transfers but the numbers should not be quoted as volumetric results. Peak
+validity is 0.426, so most counterfactuals fail; part of this is the genuine
+difficulty of converting one organ's field of view into another's, which no
+guidance should achieve, and a conditional diffusion model would likely improve
+the remainder. Frechet distance is measured in classifier feature space and is
+not comparable to published FID values. Organ identity is a proxy for a clinical
+label; applying the pipeline to a diagnostic target such as malignancy is the
+natural next step. Finally, the sweep was run with a single seed, so the shape
+of the curve is reliable but individual values carry sampling noise.
+
+\section{Conclusion}
+
+Noising depth is not a hyperparameter to be fixed and forgotten in diffusion
+counterfactual explanation. Validity is non-monotonic in it, and beyond a
+locatable operating point the procedure stops explaining the input and begins
+replacing it. Reporting the curve rather than a single setting makes the
+resulting explanations interpretable. We further find no evidence of patient
+memorisation in our generative model, using an audit we recommend as routine.
+
+\section*{Reproducibility}
+
+Code, trained-model configuration, result files and all figures are available
+at \url{https://github.com/Joana-Mansa/ct-diffusion-counterfactuals}. The full
+pipeline runs in approximately 35 minutes on one A100 and downloads its data
+automatically.
+
+\begin{thebibliography}{00}
+\bibitem{jeanneret2022diffusion} G. Jeanneret, L. Simon, and F. Jurie,
+``Diffusion models for counterfactual explanations,'' \emph{arXiv:2203.15636},
+2022.
+\bibitem{sanchez2024counterfactual} P. Sanchez et al., ``Counterfactual
+explanations for medical image classification and regression using diffusion
+autoencoder,'' \emph{J. Machine Learning for Biomedical Imaging}, 2024.
+\bibitem{salahuddin2024renal} Z. Salahuddin et al., ``Counterfactuals and
+uncertainty-based explainable paradigm for the automated detection and
+segmentation of renal cysts in computed tomography images: a multi-center
+study,'' \emph{arXiv:2408.03789}, 2024.
+\bibitem{salahuddin2022transparency} Z. Salahuddin, H. C. Woodruff, A. Chatterjee,
+and P. Lambin, ``Transparency of deep neural networks for medical image
+analysis: a review of interpretability methods,'' \emph{Computers in Biology and
+Medicine}, vol. 140, 2022.
+\bibitem{dar2024memorize} S. U. Dar et al., ``Unconditional latent diffusion
+models memorize patient imaging data: implications for openly sharing synthetic
+data,'' \emph{arXiv:2402.01054}, 2024.
+\bibitem{yang2023medmnist} J. Yang et al., ``MedMNIST v2: a large-scale
+lightweight benchmark for 2D and 3D biomedical image classification,''
+\emph{Scientific Data}, vol. 10, 2023.
+\bibitem{ho2020ddpm} J. Ho, A. Jain, and P. Abbeel, ``Denoising diffusion
+probabilistic models,'' in \emph{NeurIPS}, 2020.
+\bibitem{song2021ddim} J. Song, C. Meng, and S. Ermon, ``Denoising diffusion
+implicit models,'' in \emph{ICLR}, 2021.
+\end{thebibliography}
+
+\end{document}
