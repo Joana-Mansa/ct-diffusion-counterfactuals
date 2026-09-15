@@ -258,9 +258,8 @@ at $t_{\mathrm{start}}=600$. Meanwhile $L_1$ change grows monotonically from
 The common assumption that deeper noising buys more successful flips is
 therefore false in this setting. Past the peak, guided denoising has enough
 freedom to leave the neighbourhood of the original slice entirely. The
-classifier is then being asked about a different image, not about a modified
-version of the input, and it is no longer obliged to move toward the target
-class. At $t_{\mathrm{start}}=600$ the procedure changes 88\% of pixels and
+classifier is then evaluated on a different image, and guidance toward the
+target class becomes correspondingly less effective. At $t_{\mathrm{start}}=600$ the procedure changes 88\% of pixels and
 retains essentially nothing of the input.
 
 We suggest a simple operating criterion: choose the largest
@@ -301,8 +300,8 @@ evidence of training-image reproduction at this scale. The audit takes minutes t
 
 \section{Limitations}
 
-Results are on $64\times64$ single slices, not full CT volumes. The reported
-numbers apply at this resolution. Peak validity is 0.426, so most
+Results are on $64\times64$ single slices. The reported numbers apply at this
+resolution. Peak validity is 0.426, so most
 counterfactuals do not reach the target class; some target classes are
 unreachable within a fixed field of view, and a class-conditional diffusion
 model would likely improve the remainder. Frechet distance is measured in classifier feature space and is

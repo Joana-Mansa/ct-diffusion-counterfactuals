@@ -251,18 +251,18 @@ paper/                    IEEE-format technical report
 
 ## 7. Limitations
 
-**Resolution.** 64x64 single slices, not full CT volumes. Chosen to keep the
-pipeline within one GPU-day. Full-resolution work would require a latent
-diffusion formulation and a more expensive counterfactual search. The numbers
-here apply to this resolution only.
+**Resolution.** Experiments use 64x64 single slices. This keeps the pipeline
+within one GPU-day. Full-volume work would require a latent diffusion
+formulation and a more expensive counterfactual search. The numbers here apply
+at this resolution.
 
 **Validity.** Peak validity is 0.426, so most counterfactuals do not reach the
 target class. Some targets are unreachable within a fixed field of view. A
 class-conditional diffusion model would likely improve on classifier guidance.
 
-**Frechet distance.** Computed on organ-classifier features, not ImageNet
-Inception features, because Inception is trained on natural photographs. The
-value is comparable within this repository only and not against published FID
+**Frechet distance.** Computed on organ-classifier features. Inception features
+are trained on natural photographs and describe CT poorly. The value is
+comparable within this repository and has no relation to published FID
 numbers.
 
 **Task.** Organ identity is a proxy for a clinical label. Applying the pipeline
