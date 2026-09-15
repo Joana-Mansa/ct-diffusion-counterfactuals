@@ -32,7 +32,11 @@ def amp_setting(dev):
     """
     if dev != "cuda":
         return None, False
-    if torch.cuda.is_bf16_supported():
+    major, _ = torch.cuda.get_device_capability()
+    # torch.cuda.is_bf16_supported() answers True on Volta because bfloat16 is
+    # emulated there, and the emulated path is slower than float16. Compute
+    # capability 8.0 is where the hardware support starts, so ask for that.
+    if major >= 8:
         return torch.bfloat16, False
     return torch.float16, True
 
