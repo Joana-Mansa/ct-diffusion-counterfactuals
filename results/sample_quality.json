@@ -1,0 +1,24 @@
+{
+  "n_samples": 1024,
+  "ddim_steps": 100,
+  "frechet_classifier_features": {
+    "generated_vs_train": 46.84286427983689,
+    "real_test_vs_train": 2.892294135211449,
+    "note": "computed on organ-classifier features, not ImageNet Inception"
+  },
+  "memorisation": {
+    "generated_nn_distance": {
+      "median": 22.681922912597656,
+      "mean": 22.756093978881836,
+      "p5": 14.752504348754883,
+      "min": 11.479996681213379
+    },
+    "real_test_nn_distance": {
+      "median": 25.217708587646484,
+      "mean": 25.17635154724121,
+      "p5": 14.96035385131836,
+      "min": 10.711812019348145
+    },
+    "ratio_median_generated_over_real": 0.8994442224502563
+  }
+}

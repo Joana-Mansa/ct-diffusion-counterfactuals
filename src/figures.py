@@ -75,10 +75,22 @@ def fig_samples():
     plt.close()
 
 
+def _best_operating_point():
+    """start_t with the highest validity, which is what the panel should show."""
+    d = load("counterfactual_sweep.json")
+    if not d:
+        return None
+    return max(d["sweep"], key=lambda r: r["validity"])["start_t"]
+
+
 def fig_counterfactual_panel():
-    p = RESULTS / "counterfactual_examples.pt"
-    if not p.exists():
-        return
+    t = _best_operating_point()
+    p = RESULTS / f"counterfactual_examples_t{t}.pt" if t else None
+    if p is None or not p.exists():
+        cands = sorted(RESULTS.glob("counterfactual_examples_t*.pt"))
+        if not cands:
+            return
+        p = cands[0]
     d = torch.load(p)
     x0, xcf = d["x0"].squeeze(1).numpy(), d["xcf"].squeeze(1).numpy()
     src, tgt = d["source"].numpy(), d["target"].numpy()

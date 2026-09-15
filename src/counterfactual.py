@@ -113,7 +113,7 @@ def main():
     ap.add_argument("--scale", type=float, default=6.0)
     ap.add_argument("--steps", type=int, default=100, help="DDIM steps")
     ap.add_argument("--start-ts", type=int, nargs="+",
-                    default=[100, 200, 300, 400, 500, 600])
+                    default=[50, 100, 150, 200, 300, 400, 600])
     args = ap.parse_args()
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -147,10 +147,10 @@ def main():
         print(f"start_t {start_t:4d}  validity {m['validity']:.3f}"
               f"  L1 {m['l1']:.4f}  pixels changed {m['frac_pixels_changed']:.3f}"
               f"  identity {m['identity_corr']:.3f}", flush=True)
-        if start_t == args.start_ts[len(args.start_ts) // 2]:
-            torch.save({"x0": x0[:16].cpu(), "xcf": xcf[:16].cpu(),
-                        "source": source[:16].cpu(), "target": target[:16].cpu(),
-                        "start_t": start_t}, RESULTS / "counterfactual_examples.pt")
+        torch.save({"x0": x0[:16].cpu(), "xcf": xcf[:16].cpu(),
+                    "source": source[:16].cpu(), "target": target[:16].cpu(),
+                    "start_t": start_t},
+                   RESULTS / f"counterfactual_examples_t{start_t}.pt")
 
     (RESULTS / "counterfactual_sweep.json").write_text(json.dumps(
         {"n_explained": args.n, "scale": args.scale, "ddim_steps": args.steps,

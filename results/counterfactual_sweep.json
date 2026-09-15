@@ -1,0 +1,68 @@
+{
+  "n_explained": 256,
+  "scale": 6.0,
+  "ddim_steps": 100,
+  "classifier_acc_on_subset": 0.93359375,
+  "sweep": [
+    {
+      "validity": 0.2890625,
+      "flip_rate_any": 0.53515625,
+      "l1": 0.0902826339006424,
+      "l2": 0.12161560356616974,
+      "frac_pixels_changed": 0.3446187973022461,
+      "identity_corr": 0.9500433206558228,
+      "start_t": 100,
+      "scale": 6.0
+    },
+    {
+      "validity": 0.41796875,
+      "flip_rate_any": 0.8046875,
+      "l1": 0.15391749143600464,
+      "l2": 0.2050514817237854,
+      "frac_pixels_changed": 0.5420341491699219,
+      "identity_corr": 0.8689404726028442,
+      "start_t": 200,
+      "scale": 6.0
+    },
+    {
+      "validity": 0.3828125,
+      "flip_rate_any": 0.9375,
+      "l1": 0.30939316749572754,
+      "l2": 0.38984131813049316,
+      "frac_pixels_changed": 0.7816829681396484,
+      "identity_corr": 0.5888875722885132,
+      "start_t": 300,
+      "scale": 6.0
+    },
+    {
+      "validity": 0.39453125,
+      "flip_rate_any": 0.93359375,
+      "l1": 0.4160519242286682,
+      "l2": 0.510800838470459,
+      "frac_pixels_changed": 0.8457765579223633,
+      "identity_corr": 0.3491700291633606,
+      "start_t": 400,
+      "scale": 6.0
+    },
+    {
+      "validity": 0.3359375,
+      "flip_rate_any": 0.8984375,
+      "l1": 0.46755608916282654,
+      "l2": 0.5635911822319031,
+      "frac_pixels_changed": 0.8667516708374023,
+      "identity_corr": 0.18597325682640076,
+      "start_t": 500,
+      "scale": 6.0
+    },
+    {
+      "validity": 0.234375,
+      "flip_rate_any": 0.90234375,
+      "l1": 0.48397374153137207,
+      "l2": 0.5743467211723328,
+      "frac_pixels_changed": 0.8774423599243164,
+      "identity_corr": 0.07860366255044937,
+      "start_t": 600,
+      "scale": 6.0
+    }
+  ]
+}
