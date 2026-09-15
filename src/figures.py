@@ -122,7 +122,7 @@ def fig_validity_proximity():
     t = [r["start_t"] for r in s]
     fig, axes = plt.subplots(1, 3, figsize=(10, 3))
     axes[0].plot(t, [r["validity"] for r in s], "o-", color="#3b6ea5", label="reaches target")
-    axes[0].plot(t, [r["flip_rate_any"] for r in s], "s--", color="#8a8a8a", label="leaves source")
+    axes[0].plot(t, [r["flip_rate_any"] for r in s], "s--", color="#8a8a8a", label="differs from dataset label")
     axes[0].set_xlabel("start_t")
     axes[0].set_ylabel("rate")
     axes[0].set_title("Validity")
@@ -158,7 +158,7 @@ def fig_memorisation():
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.set_ylabel("L2 distance to nearest training image")
-    ax.set_title("Memorisation check")
+    ax.set_title("Pixel neighbours: 2,048 training references")
     ax.legend(fontsize=7)
     plt.tight_layout()
     plt.savefig(FIGS / "memorisation.png")

@@ -1,0 +1,15 @@
+{
+  "platform": "Linux",
+  "gpu": "NVIDIA A100 80GB",
+  "packages": {
+    "torch": "2.14.0",
+    "monai": "1.6.0",
+    "medmnist": "3.0.2",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "matplotlib": "3.11.2",
+    "einops": "0.8.2"
+  },
+  "date": "2026-09-15",
+  "scope": "checkpoint reevaluation and saved-array checks; version ranges in requirements.txt are not exhaustively tested"
+}

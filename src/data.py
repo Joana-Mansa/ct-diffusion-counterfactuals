@@ -5,6 +5,9 @@ Liver Tumor Segmentation Benchmark. We use the 64x64 release. Images arrive as
 uint8 and are scaled to [-1, 1], which is the range the diffusion model expects.
 """
 
+import os
+from pathlib import Path
+
 import numpy as np
 import torch
 from medmnist import OrganAMNIST
@@ -15,13 +18,14 @@ ORGANS = [
     "kidney-right", "liver", "lung-left", "lung-right", "pancreas", "spleen",
 ]
 SIZE = 64
-ROOT = "data/medmnist"
+ROOT = os.environ.get("MEDMNIST_ROOT", str(Path(__file__).resolve().parents[1] / "data" / "medmnist"))
 
 
 class OrganSlices(Dataset):
     """OrganAMNIST split as float tensors in [-1, 1] with integer organ labels."""
 
     def __init__(self, split, root=ROOT, size=SIZE):
+        Path(root).mkdir(parents=True, exist_ok=True)
         ds = OrganAMNIST(split=split, download=True, root=root, size=size)
         self.imgs = ds.imgs.astype(np.float32) / 127.5 - 1.0
         self.labels = ds.labels.astype(np.int64).squeeze(-1)

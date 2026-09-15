@@ -1,19 +1,6 @@
-"""Generate counterfactual CT slices with classifier-guided diffusion.
+"""Generate classifier-guided diffusion candidates and measure pixel changes.
 
-The question a counterfactual answers is: what is the smallest change to this
-slice that makes the classifier call it something else? We answer it by noising
-the real slice part of the way up the diffusion trajectory and denoising it back
-down while pushing the gradient of the classifier toward a target organ.
-
-Two knobs control the trade-off.
-
-  start_t  how far up the trajectory we go. Low values keep the image close to
-           the original and rarely change the prediction. High values change the
-           prediction and stop resembling the original.
-  scale    how hard the classifier pushes at each denoising step.
-
-Sweeping start_t is what produces the validity-against-proximity curve, which is
-the main result of this repository.
+No minimum-edit or anatomical-validity guarantee is implied.
 """
 
 import argparse
@@ -111,7 +98,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=256, help="test slices to explain")
     ap.add_argument("--scale", type=float, default=6.0)
-    ap.add_argument("--steps", type=int, default=100, help="DDIM steps")
+    ap.add_argument("--steps", type=int, default=100, help="points in the full DDIM timestep grid")
     ap.add_argument("--start-ts", type=int, nargs="+",
                     default=[50, 100, 150, 200, 300, 400, 600])
     args = ap.parse_args()

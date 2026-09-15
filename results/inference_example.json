@@ -1,0 +1,23 @@
+{
+  "index": 0,
+  "seed": 2026,
+  "ground_truth": "kidney-left",
+  "original_prediction": "kidney-left",
+  "original_confidence": 0.9366541504859924,
+  "target_organ": "liver",
+  "counterfactual_prediction": "liver",
+  "counterfactual_confidence_in_target": 0.9106433391571045,
+  "flipped_to_target": true,
+  "start_t": 200,
+  "ddim_grid_steps": 100,
+  "executed_steps": 20,
+  "guidance_scale": 6.0,
+  "quality": {
+    "validity": 1.0,
+    "flip_rate_any": 1.0,
+    "l1": 0.1560913622379303,
+    "l2": 0.20542746782302856,
+    "frac_pixels_changed": 0.585693359375,
+    "identity_corr": 0.7353330850601196
+  }
+}

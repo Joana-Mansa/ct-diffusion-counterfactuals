@@ -1,0 +1,158 @@
+{
+  "dataset": "organamnist",
+  "license": "CC BY 4.0",
+  "source": "https://zenodo.org/records/10519652/files/organamnist_64.npz?download=1",
+  "md5": "2dcccc29b88e6da5a01161ef20cda288",
+  "sha256": "7c39150fd57085477a9f0b7f1dcec76eae366f578f4e600653ddc15d46aab6e0",
+  "splits": {
+    "train": {
+      "images_shape": [
+        34561,
+        64,
+        64
+      ],
+      "labels_shape": [
+        34561,
+        1
+      ],
+      "dtype": "uint8",
+      "min": 0,
+      "max": 255,
+      "counts": [
+        1956,
+        1390,
+        1357,
+        1474,
+        3963,
+        3817,
+        6164,
+        3919,
+        3929,
+        3031,
+        3561
+      ]
+    },
+    "val": {
+      "images_shape": [
+        6491,
+        64,
+        64
+      ],
+      "labels_shape": [
+        6491,
+        1
+      ],
+      "dtype": "uint8",
+      "min": 0,
+      "max": 255,
+      "counts": [
+        321,
+        233,
+        225,
+        392,
+        568,
+        637,
+        1033,
+        1033,
+        1009,
+        529,
+        511
+      ]
+    },
+    "test": {
+      "images_shape": [
+        17778,
+        64,
+        64
+      ],
+      "labels_shape": [
+        17778,
+        1
+      ],
+      "dtype": "uint8",
+      "min": 0,
+      "max": 255,
+      "counts": [
+        1036,
+        784,
+        793,
+        785,
+        2064,
+        1965,
+        3285,
+        1747,
+        1813,
+        1622,
+        1884
+      ]
+    }
+  },
+  "examples": [
+    {
+      "split": "test",
+      "index": 1,
+      "label_id": 0,
+      "label": "bladder"
+    },
+    {
+      "split": "test",
+      "index": 47,
+      "label_id": 1,
+      "label": "femur-left"
+    },
+    {
+      "split": "test",
+      "index": 26,
+      "label_id": 2,
+      "label": "femur-right"
+    },
+    {
+      "split": "test",
+      "index": 81,
+      "label_id": 3,
+      "label": "heart"
+    },
+    {
+      "split": "test",
+      "index": 0,
+      "label_id": 4,
+      "label": "kidney-left"
+    },
+    {
+      "split": "test",
+      "index": 4,
+      "label_id": 5,
+      "label": "kidney-right"
+    },
+    {
+      "split": "test",
+      "index": 3,
+      "label_id": 6,
+      "label": "liver"
+    },
+    {
+      "split": "test",
+      "index": 7,
+      "label_id": 7,
+      "label": "lung-left"
+    },
+    {
+      "split": "test",
+      "index": 2,
+      "label_id": 8,
+      "label": "lung-right"
+    },
+    {
+      "split": "test",
+      "index": 34,
+      "label_id": 9,
+      "label": "pancreas"
+    },
+    {
+      "split": "test",
+      "index": 19,
+      "label_id": 10,
+      "label": "spleen"
+    }
+  ]
+}

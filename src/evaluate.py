@@ -1,22 +1,6 @@
-"""Sample quality and the memorisation check.
+"""Measure classifier-feature distribution distance and pixel neighbours.
 
-Two things are measured here.
-
-Realism. We report a Frechet distance computed on features from the organ
-classifier trained in this repository, not from an ImageNet Inception network.
-Inception features are trained on natural photographs and the usual complaint
-about applying standard FID to medical images is that the feature space does not
-describe them well. Using a feature extractor trained on the same CT data keeps
-the measure in the right domain. The number is therefore comparable within this
-repository and not against published FID values elsewhere, which is stated again
-in the README.
-
-Memorisation. Latent diffusion models trained on medical images have been shown
-to reproduce training patients (arXiv:2402.01054). For every generated sample we
-find its nearest training image and record the distance. On its own that number
-means nothing, so we compute the same statistic for held-out real test images.
-If generated samples sit much closer to the training set than real unseen images
-do, the model is copying rather than generating.
+These are sample-level diagnostics, not clinical-realism or privacy guarantees.
 """
 
 import argparse

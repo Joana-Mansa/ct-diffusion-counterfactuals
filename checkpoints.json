@@ -1,0 +1,18 @@
+{
+  "release": "verified-2026-09-15",
+  "usage": "Research benchmark checkpoints; not clinical models",
+  "artifacts": [
+    {
+      "path": "weights/classifier.pt",
+      "filename": "classifier.pt",
+      "sha256": "f8d843bcf002d51395f16296087449c5cf5a56a6566b302ab28824ef8485dd64",
+      "url": "https://github.com/Joana-Mansa/ct-diffusion-counterfactuals/releases/download/verified-2026-09-15/classifier.pt"
+    },
+    {
+      "path": "weights/ddpm.pt",
+      "filename": "ddpm.pt",
+      "sha256": "f968cd02ac98a0b26b12c040f22a873256743a68ed42351e92ec4835888b6ca1",
+      "url": "https://github.com/Joana-Mansa/ct-diffusion-counterfactuals/releases/download/verified-2026-09-15/ddpm.pt"
+    }
+  ]
+}

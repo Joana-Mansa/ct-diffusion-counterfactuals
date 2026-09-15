@@ -1,0 +1,7 @@
+numpy>=2,<3
+scipy>=1.11,<2
+matplotlib>=3.8,<4
+torch>=2.5,<3
+monai>=1.5,<2
+medmnist==3.0.2
+einops>=0.8,<1

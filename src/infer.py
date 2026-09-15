@@ -1,12 +1,6 @@
-"""Explain one CT slice by counterfactual, end to end.
+"""Generate a single benchmark counterfactual and report prediction changes.
 
-Give it a test slice and a target organ. It returns the classifier's original
-call, the counterfactual that changes that call, and the four numbers that say
-whether the counterfactual is worth believing.
-
-The default noising depth is the operating point found by the sweep in
-`counterfactual.py`, which is the largest depth where identity correlation with
-the original slice is still high and validity has not yet started to fall.
+Target success and pixel similarity do not establish anatomical validity.
 """
 
 import argparse
@@ -50,11 +44,15 @@ def main():
     ap.add_argument("--scale", type=float, default=6.0)
     ap.add_argument("--steps", type=int, default=100)
     ap.add_argument("--out", default="inference_example.png")
+    ap.add_argument("--seed", type=int, default=2026, help="sampling seed")
     args = ap.parse_args()
+    torch.set_num_threads(4)
+    torch.manual_seed(args.seed)
+    RESULTS.mkdir(parents=True, exist_ok=True)
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     FIGS.mkdir(parents=True, exist_ok=True)
-    start_t = args.start_t or pick_operating_point()
+    start_t = args.start_t if args.start_t is not None else pick_operating_point()
 
     unet, clf, n_train_ts = load_models(dev)
     sched = DDIMScheduler(num_train_timesteps=n_train_ts)
@@ -71,7 +69,7 @@ def main():
     if args.target is not None:
         target_idx = ORGANS.index(args.target)
     else:
-        # Second most likely class: the nearest decision the model could flip to.
+        # Default probe: the second-most-likely class, not a minimum-edit target.
         target_idx = int(np.argsort(probs)[-2])
     target = torch.tensor([target_idx], device=dev)
 
@@ -83,6 +81,7 @@ def main():
 
     report = {
         "index": args.index,
+        "seed": args.seed,
         "ground_truth": ORGANS[truth],
         "original_prediction": ORGANS[source],
         "original_confidence": float(probs[source]),
@@ -91,6 +90,8 @@ def main():
         "counterfactual_confidence_in_target": float(cf_probs[target_idx]),
         "flipped_to_target": bool(int(cf_probs.argmax()) == target_idx),
         "start_t": start_t,
+        "ddim_grid_steps": args.steps,
+        "executed_steps": sum(int(t) <= start_t for t in sched.timesteps),
         "guidance_scale": args.scale,
         "quality": {k: v for k, v in m.items()},
     }
