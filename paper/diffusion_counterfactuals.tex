@@ -14,8 +14,8 @@
 
 \begin{document}
 
-\title{Where Diffusion Counterfactuals Stop Explaining and Start Repainting:\\
-An Operating-Point Analysis on Abdominal CT}
+\title{Noising Depth Controls Validity and Identity Preservation\\
+in Diffusion Counterfactual Explanations for Abdominal CT}
 
 \author{\IEEEauthorblockN{Joana Owusu-Appiah}
 \IEEEauthorblockA{\textit{Erasmus Mundus MSc Medical Imaging and Applications (MAIA)} \\
@@ -25,25 +25,22 @@ owusuappiahjoana59@gmail.com}}
 \maketitle
 
 \begin{abstract}
-Counterfactual explanation asks what would have to change for a classifier to
-decide otherwise, and diffusion models are an increasingly common way to
-generate the answer. The method has a free parameter that is rarely studied: how
-far up the forward diffusion trajectory the original image is taken before
-guided denoising begins. We train an unconditional denoising diffusion
-probabilistic model on 34{,}561 abdominal CT slices, attach a classifier-guided
-sampling procedure, and sweep this noising depth across seven values while
-measuring validity, proximity, pixel-level sparsity and identity preservation on
-256 held-out slices. Validity does not increase monotonically with noising
-depth. It peaks at 0.426 and then declines, while identity correlation with the
-original slice collapses from 0.981 to 0.079. Past the peak the procedure
-changes 88\% of pixels and retains almost nothing of the input, so whatever it
-produces is no longer an explanation of that slice. We additionally run a
-nearest-neighbour memorisation audit against the training set and find no
-evidence of training-image reproduction, with generated samples no closer to
-training data than real held-out images are. We argue that reporting a single
-noising depth without the surrounding curve makes diffusion counterfactuals
-difficult to interpret, and that the memorisation audit should be routine for
-generative models trained on patient data. Code and all figures are public.
+Counterfactual explanation identifies the smallest change to an input that
+alters a classifier's decision, and diffusion models are increasingly used to
+generate such changes. The procedure has a free parameter that is seldom
+reported: the depth to which the input is noised along the forward diffusion
+trajectory before guided denoising begins. We train an unconditional denoising
+diffusion probabilistic model on 34{,}561 abdominal CT slices, add
+classifier-guided sampling, and evaluate seven noising depths on 256 held-out
+slices, measuring validity, proximity, pixel-level sparsity and identity
+preservation. Validity is non-monotonic in noising depth. It reaches 0.426 at
+$t_{\mathrm{start}}=200$ and falls to 0.219 at $t_{\mathrm{start}}=600$, while
+identity correlation with the input decreases monotonically from 0.981 to 0.079.
+At the largest depth the procedure modifies 88\% of pixels. We define an
+operating criterion based on the identity statistic and the location of the
+validity peak, and report a nearest-neighbour memorisation audit with a
+real-data control, which found no evidence of training-image reproduction.
+Code, result files and figures are available.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -53,38 +50,32 @@ tomography, generative models, memorisation
 
 \section{Introduction}
 
-Saliency maps tell a reader where a network looked. They do not say what would
-have had to be different for the network to reach another conclusion. A
-counterfactual explanation answers the second question directly: given an image
-the model labels $y$, produce the nearest image the model labels $y'$. If the
-edit lands on structures a clinician would also identify, the explanation is
-informative; if it scatters changes across the whole field of view, it is not.
+Saliency maps indicate which regions of an input a network responded to. They
+do not indicate what change to the input would alter the network's decision. A
+counterfactual explanation addresses that question: given an image the model
+labels $y$, it produces the nearest image the model labels $y'$. The usefulness
+of the explanation depends on the location and extent of the edit.
 
-Diffusion models are well suited to generating such edits because they define a
-continuous path between data and noise. The standard recipe noises a real image
-forward to some timestep $t_{\mathrm{start}}$ and denoises it back down under
-gradient guidance from the classifier being explained
+Diffusion models define a continuous path between data and noise, which makes
+them suitable for generating such edits. The standard procedure noises a real
+image forward to timestep $t_{\mathrm{start}}$ and denoises it under gradient
+guidance from the classifier being explained
 \cite{jeanneret2022diffusion,sanchez2024counterfactual}. The choice of
-$t_{\mathrm{start}}$ controls a trade-off that is intuitively obvious and, in
-practice, rarely reported: too little noise leaves the image unchanged and the
-prediction unmoved, too much destroys the evidence the explanation was supposed
-to be about.
+$t_{\mathrm{start}}$ determines a trade-off between the probability of changing
+the prediction and the amount of the original image that is preserved.
 
-This paper treats that parameter as the object of study rather than a
-hyperparameter to be fixed. Our contributions are:
+This paper reports a systematic study of that parameter. Our contributions
+are:
 
 \begin{enumerate}
-\item A systematic sweep of noising depth on abdominal CT, measuring validity,
-      proximity, sparsity and identity on the same 256 slices, showing that
-      validity is \emph{non-monotonic} and peaks well before the image is
-      destroyed.
-\item Identification of an operating point beyond which the procedure stops
-      being an explanation of the input, with quantitative criteria for locating
-      it.
-\item A nearest-neighbour memorisation audit with a real-data control, which we
-      argue should accompany any medical generative model, following the finding
-      that latent diffusion models can reproduce training patients
-      \cite{dar2024memorize}.
+\item A sweep of noising depth on abdominal CT, measuring validity, proximity,
+      sparsity and identity preservation on a common set of 256 slices, which
+      shows that validity is non-monotonic in noising depth.
+\item A quantitative criterion for selecting an operating point, based on the
+      identity statistic and the location of the validity peak.
+\item A nearest-neighbour memorisation audit with a real-data control,
+      following the finding that latent diffusion models can reproduce training
+      patients \cite{dar2024memorize}.
 \end{enumerate}
 
 \section{Related Work}
@@ -102,9 +93,8 @@ that substitution introduces.
 
 \textbf{Interpretability evaluation.} Salahuddin et
 al.~\cite{salahuddin2022transparency} survey interpretability for medical image
-analysis and note that explanation quality is frequently asserted rather than
-measured. We follow that recommendation by reporting four quantitative axes
-rather than a gallery of examples.
+analysis and note that explanation quality is frequently asserted without
+measurement. We report four quantitative axes.
 
 \textbf{Memorisation.} Dar et al.~\cite{dar2024memorize} show that unconditional
 latent diffusion models trained on medical images can reproduce training
@@ -121,8 +111,8 @@ classes and derived from the Liver Tumor Segmentation Benchmark. Splits are
 34{,}561 training, 6{,}491 validation and 17{,}778 test images. Intensities are
 mapped from \texttt{uint8} to $[-1,1]$. Fig.~\ref{fig:dist} shows the class
 distribution, which is uneven: liver contributes 6{,}164 training slices and
-femur-left 1{,}390. We therefore report per-class classifier accuracy rather
-than a single average.
+femur-left 1{,}390. Per-class classifier accuracy is reported in
+Table~\ref{tab:perclass}.
 
 \begin{figure}[t]
 \centerline{\includegraphics[width=\columnwidth]{../docs/figures/class_distribution.png}}
@@ -149,9 +139,8 @@ minutes on one NVIDIA A100.
 \subsection{Classifier under explanation}
 
 The model being explained is a four-stage convolutional network over
-$64\times64$ slices with 11 outputs. It is deliberately small: the object of
-study is the explanation procedure, and a larger classifier would slow the
-counterfactual search without changing what is measured.
+$64\times64$ slices with 11 outputs. A small classifier keeps the counterfactual
+search inexpensive and does not affect the quantities measured here.
 
 \subsection{Counterfactual generation}
 
@@ -170,10 +159,9 @@ and modify the noise prediction using the classifier gradient,
 \end{equation}
 with guidance scale $s=6$.
 
-Taking the gradient with respect to $\hat{x}_0^{(t)}$ rather than $x_t$ is
-deliberate. The classifier was trained on clean slices, so evaluating it on a
-partially noised latent queries it about inputs outside its training
-distribution.
+The gradient is taken with respect to $\hat{x}_0^{(t)}$ because the classifier
+was trained on clean slices and has not been exposed to partially noised
+latents.
 
 \subsection{Evaluation}
 
@@ -183,9 +171,8 @@ classifier predicts $y'$ after editing. \textbf{Proximity} is mean $L_1$ change
 and the fraction of pixels moving more than $0.1$ on the $[-1,1]$ scale.
 \textbf{Identity} is the centred cosine similarity between $x_0$ and the
 counterfactual. \textbf{Realism} is a Frechet distance computed on features of
-the organ classifier rather than ImageNet Inception, because Inception features
-are trained on natural photographs and describe CT poorly; the number is
-therefore internally comparable only.
+the organ classifier instead of ImageNet Inception, since Inception features are
+trained on natural photographs. The value is comparable within this study only.
 
 For memorisation we compute, for each of 1{,}024 generated samples, the minimum
 $L_2$ pixel distance to any of 2{,}048 training images, and compare the
@@ -285,7 +272,7 @@ conditions select $t_{\mathrm{start}}=200$.
 \centerline{\includegraphics[width=\columnwidth]{../docs/figures/counterfactual_panel.png}}
 \caption{Counterfactuals at the operating point. Top: original. Middle:
 counterfactual. Bottom: difference. Anatomy is preserved and edits are localised
-and structured rather than uniform noise.}
+and structured.}
 \label{fig:panel}
 \end{figure}
 
@@ -310,19 +297,15 @@ Real test ($n{=}310$)  & 25.22 & 10.71 & 1.000 \\
 Generated samples sit approximately 10\% closer to the training set than real
 unseen images (Table~\ref{tab:mem}), and the closest generated sample is
 \emph{further} from training data than the closest real test image. There is no
-evidence of training-image reproduction at this scale. We stress that this audit
-costs minutes and should accompany any medical generative model whose outputs
-may be shared.
+evidence of training-image reproduction at this scale. The audit takes minutes to run on a trained model.
 
 \section{Limitations}
 
-Results are on $64\times64$ single slices rather than full CT volumes, a
-deliberate trade to keep the pipeline within a single-GPU day. The method
-transfers but the numbers should not be quoted as volumetric results. Peak
-validity is 0.426, so most counterfactuals fail; part of this is the genuine
-difficulty of converting one organ's field of view into another's, which no
-guidance should achieve, and a conditional diffusion model would likely improve
-the remainder. Frechet distance is measured in classifier feature space and is
+Results are on $64\times64$ single slices, not full CT volumes. The reported
+numbers apply at this resolution. Peak validity is 0.426, so most
+counterfactuals do not reach the target class; some target classes are
+unreachable within a fixed field of view, and a class-conditional diffusion
+model would likely improve the remainder. Frechet distance is measured in classifier feature space and is
 not comparable to published FID values. Organ identity is a proxy for a clinical
 label; applying the pipeline to a diagnostic target such as malignancy is the
 natural next step. Finally, the sweep was run with a single seed, so the shape
@@ -330,12 +313,13 @@ of the curve is reliable but individual values carry sampling noise.
 
 \section{Conclusion}
 
-Noising depth is not a hyperparameter to be fixed and forgotten in diffusion
-counterfactual explanation. Validity is non-monotonic in it, and beyond a
-locatable operating point the procedure stops explaining the input and begins
-replacing it. Reporting the curve rather than a single setting makes the
-resulting explanations interpretable. We further find no evidence of patient
-memorisation in our generative model, using an audit we recommend as routine.
+Validity is non-monotonic in noising depth, peaking at $t_{\mathrm{start}}=200$
+and declining thereafter while identity preservation falls monotonically. Beyond
+the peak the procedure modifies most of the image and the output no longer
+corresponds to the input slice. Reporting the full curve, and the identity
+statistic alongside validity, allows an operating point to be selected. A
+nearest-neighbour memorisation audit found no evidence of training-image
+reproduction.
 
 \section*{Reproducibility}
 
